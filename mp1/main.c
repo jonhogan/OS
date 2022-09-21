@@ -1,50 +1,68 @@
 //#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include<fcntl.h>
+#include<sys/types.h>
+#include<sys/stat.h>
+
+#include <string.h>
 
 #define myPID getpid()
 #define parentID getppid()
 
-void *read_chars(void *pid, char $array){
+void *read_chars(int pid, char array[])
+{
+  int readptr;
   
+  readptr = open("input.txt", O_RDWR);
+  //writeptr = fopen("output.txt", "w");
+  int start = pid*10;
+  
+  read(readptr, array, 5);
+  write(1, array, 5);
+  //read(readptr, array, 5);
+  lseek(readptr,5,SEEK_CUR);
+  //read(readptr, array, 5);
+  read(readptr, array, 5);
+  write(1, array, 5);
+  //writing the next five after skipping 5 in sequence 
+
+  //using lseek to skip 5 and that is current placeholder to start fr
+  lseek(readptr,5,SEEK_CUR);
+  //read(readptr, array, 5);
+  read(readptr, array, 5);
+  write(1, array, 5);
+  //writing the next 5
+  printf("\n");
+    
 }
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[])
+{
+  
   int pid;
   int i = 1;
-  char *charArray;
-
-  charArray = malloc(60);
-
-  //Open and read from the file
-  FILE *doc;
-
-  doc = fopen("text.dat", "r");
-
-  if(NULL == doc){printf("File not found.\n")};
-
-  charArray[0] = fgetc(doc);
-
-  while(doc != EOF){
-    charArray[i] = fgetc(doc);
-  }
-
-  for(int j = 0; j < 60; j++){
-    printf("%c ", charArray[j]);
-  }
-
+  
  //Create the two child processes 
   fork();
   if(parentID == 1){
     fork();
   }
   
-  if(parentID == 1){
+  //Assign process ids
+  if(parentID == 1)
+  {
     pid = 0;
   }else{
+    //Will give a process ID of 1 and 2
     pid = myPID - parentID;
   }
 
+  char charArray[5];
+  
+  read_chars(pid, charArray);
+  
   waitpid(-1, NULL, 0);
   
   //printf("My ID is %d, my parent is %d. My Process ID is %d\n", myPID, parentID, pid);
