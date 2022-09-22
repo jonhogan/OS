@@ -1,69 +1,65 @@
-//#include <pthread.h>
+/***************************************************************
+  Ethan Coyle
+  Dymon Brown
+  Jonathan Hogan
+
+  CMPS-4103-101 Intro to Operating Systems
+  Dr. Passos
+  Mini Project 1
+  
+****************************************************************/
+
+
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
-#include<fcntl.h>
-#include<sys/types.h>
-#include<sys/stat.h>
-
 #include <string.h>
 
 #define myPID getpid()
 #define parentID getppid()
 
-void *read_chars(int pid, char array[])
-{
+void *read_chars(int pid, char array[]) {
   int readptr;
-  
-  readptr = open("input.txt", O_RDWR);
-  //writeptr = fopen("output.txt", "w");
-  int start = pid*10;
-  
-  read(readptr, array, 5);
-  write(1, array, 5);
-  //read(readptr, array, 5);
-  lseek(readptr,5,SEEK_CUR);
-  //read(readptr, array, 5);
-  read(readptr, array, 5);
-  write(1, array, 5);
-  //writing the next five after skipping 5 in sequence 
+  int start = pid * 10;
 
-  //using lseek to skip 5 and that is current placeholder to start fr
-  lseek(readptr,5,SEEK_CUR);
-  //read(readptr, array, 5);
+  //open the input file to read from
+  readptr = open("input.txt", O_RDWR);
+
+  lseek(readptr, start, SEEK_SET);
   read(readptr, array, 5);
-  write(1, array, 5);
-  //writing the next 5
-  printf("\n");
-    
+  close("input.txt");
+  
+  //open a file to print to
+  FILE *f_write;
+  f_write = fopen("output.txt", "a");
+  fprintf(f_write,"From process %d: %c%c%c%c%c\n", pid, array[0], array[1], array[2], array[3], array[4]);
+  fclose(f_write);
 }
 
-int main(int argc, char *argv[])
-{
-  
+int main(int argc, char *argv[]) {
   int pid;
   int i = 1;
-  
- //Create the two child processes 
+
+  // Create the child processes
   fork();
-  if(parentID == 1){
+
+  //The first process will have a parent ID of one this
+  //will block the first child from creating a fork
+  if (parentID == 1) {
     fork();
   }
-  
-  //Assign process ids
-  if(parentID == 1)
-  {
+
+  // Assign process ids
+  if (parentID == 1) {
     pid = 0;
-  }else{
-    //Will give a process ID of 1 and 2
+  } else {
+    // Will give a process ID of 1 and 2
     pid = myPID - parentID;
   }
-
   char charArray[5];
-  
   read_chars(pid, charArray);
-  
   waitpid(-1, NULL, 0);
-  
-  //printf("My ID is %d, my parent is %d. My Process ID is %d\n", myPID, parentID, pid);
 }
