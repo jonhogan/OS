@@ -45,22 +45,27 @@ int main(int argc, char *argv[]) {
 
   // Create the child processes
   fork();
+  pid = 1;
 
   //The first process will have a parent ID of one this
   //will block the first child from creating a fork
   if (parentID == 1) {
+    //set parent process ID to 0
+    pid = 0;
     fork();
   }
 
-  // Assign process ids
-  if (parentID == 1) {
-    pid = 0;
-  } else {
-    // Will give a process ID of 1 and 2
-    pid = myPID - parentID;
+  //set 2nd child ID to 2
+  if(parentID != 1 && pid != 1){
+      pid = 2;
   }
+  
+
   char charArray[5];
   read_chars(pid, charArray);
+
+  //Waits for all children to finish before allowing the
+  //parent process to end
   waitpid(-1, NULL, 0);
 
   return 0;
