@@ -62,4 +62,6 @@ int main(int argc, char *argv[]) {
   char charArray[5];
   read_chars(pid, charArray);
   waitpid(-1, NULL, 0);
+
+  return 0;
 }
