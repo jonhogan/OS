@@ -31,7 +31,7 @@ void wait(S){
     S--;
 }
 
-void post(S){
+void signal(S){
     S++;
 }
 
@@ -46,13 +46,10 @@ void sem_sum(void *thread_id){
     for (int i = start; i < end; i++){
         sum += theArray[i];
     }
-    TOTAL += sum;
-
-    post(cnt);
 
     printf("Thread %ld: Sum is %ld using a semaphore\n", tid, sum);
 
-  
+    signal(cnt);
 }
 
 void no_sem_sum(void *thread_id){
@@ -64,7 +61,6 @@ void no_sem_sum(void *thread_id){
     for (int i = start; i < end; i++){
         sum += theArray[i];
     }
-    TOTAL += sum;
 
     printf("Thread %ld: Sum is %ld without using a semaphore\n", tid, sum);
 
@@ -75,7 +71,7 @@ int main()
     pthread_t threads[NUM_OF_THREADS];
     int rc;
     long t;
-    void *status;
+    void * status;
     pthread_attr_t attr;
     //pthread_mutex_init(&mx,NULL);
     pthread_attr_init(&attr);
@@ -86,10 +82,7 @@ int main()
     }
 
     for(int tid = 1; tid <= NUM_OF_THREADS; tid++){
-        //Function without a semaphore
-        rc = pthread_create(&threads[tid - 1], &attr, no_sem_sum, (void *)tid);
-        //Following code uses a semaphore
-        //rc = pthread_create(&threads[tid - 1], &attr, sem_sum, (void *)tid);
+        rc = pthread_create(&threads[t], &attr, no_sem_sum, (void *)tid);
         if (rc){
             printf("ERROR; return code from pthread_create() is %d\n", rc);
             exit(-1);
@@ -102,10 +95,30 @@ int main()
         pthread_join(threads[i], &status);
     }
 
-    printf("The total of all elements in the array is: %d\n", TOTAL);
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
-   
+    for(int tid = 1; tid <= NUM_OF_THREADS; tid++){
+        rc = pthread_create(&threads[tid - 1], &attr, sem_sum, (void *)tid);
+        if (rc){
+            printf("ERROR; return code from pthread_create() is %d\n", rc);
+            exit(-1);
+        }
+    }
+
+    pthread_attr_destroy(&attr);
+
+    for(int i=0; i<NUM_OF_THREADS; i++){
+        pthread_join(threads[i], &status);
+    }
+    
+    //pthread_mutex_destroy(&mx);
     pthread_exit(NULL);
     return 0;
 
 }
+
+// only thing left is make sure values of array are initialized i%257 i think
+// that I got that done and then the only other thing is where Passos specified
+// that the value range should be 2000-3999 those are the only two things this
+// is lacking and the program will be done
