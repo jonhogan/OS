@@ -19,15 +19,18 @@
 #define NUM_OF_THREADS 5
 #define SIZE 10000
 
-//pthread_mutex_t mx;
+pthread_mutex_t mx;
 pthread_cond_t cond[5];
-int cnt = 0;
+int myMutex = 1;
 
-int TOTAL = 0;
+int total = 0;
+int semaphoreTotal = 0;
+int mutexTotal = 0;
+
 int theArray[SIZE];
 
 void wait(S){
-    while (S < 0);
+    while (S < 1){};
     S--;
 }
 
@@ -41,18 +44,38 @@ void sem_sum(void *thread_id){
     long start = ((tid - 1) * 2000);
     long end = start + 2000;
 
-    wait(cnt);
+   
 
     for (int i = start; i < end; i++){
         sum += theArray[i];
     }
-    TOTAL += sum;
 
-    post(cnt);
-
+    wait(myMutex);
+  
+    semaphoreTotal += sum;
     printf("Thread %ld: Sum is %ld using a semaphore\n", tid, sum);
 
+    post(myMutex);
+}
+
+void mutex_sum(void *thread_id){
+    long sum = 0;
+    long tid = (long)thread_id;
+    long start = ((tid - 1) * 2000);
+    long end = start + 2000;
+
+   
+
+    for (int i = start; i < end; i++){
+        sum += theArray[i];
+    }
+
+    pthread_mutex_lock(&mx);
   
+    mutexTotal += sum;
+    printf("Thread %ld: Sum is %ld using a mutex\n", tid, sum);
+
+    pthread_mutex_unlock(&mx);
 }
 
 void no_sem_sum(void *thread_id){
@@ -64,7 +87,7 @@ void no_sem_sum(void *thread_id){
     for (int i = start; i < end; i++){
         sum += theArray[i];
     }
-    TOTAL += sum;
+    total += sum;
 
     printf("Thread %ld: Sum is %ld without using a semaphore\n", tid, sum);
 
@@ -81,29 +104,32 @@ int main()
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
     
-    for(int i = 1; i < SIZE; i++){
-        theArray[i] = i%257;
+    for(int i = 1; i < SIZE+1; i++){
+        theArray[i-1] = i%257;
     }
 
-    for(int tid = 1; tid <= NUM_OF_THREADS; tid++){
+    for(long tid = 1; tid <= NUM_OF_THREADS; tid++){
         //Function without a semaphore
-        rc = pthread_create(&threads[tid - 1], &attr, no_sem_sum, (void *)tid);
-        //Following code uses a semaphore
+        //rc = pthread_create(&threads[tid - 1], &attr, no_sem_sum, (void *)tid);
+        //Following function uses a semaphore
         //rc = pthread_create(&threads[tid - 1], &attr, sem_sum, (void *)tid);
+        //Following function uses a mutex
+        rc = pthread_create(&threads[tid - 1], &attr, mutex_sum, (void *)tid);
         if (rc){
             printf("ERROR; return code from pthread_create() is %d\n", rc);
             exit(-1);
         }
     }
 
-    //pthread_attr_destroy(&attr);
+    pthread_attr_destroy(&attr);
 
     for(int i=0; i<NUM_OF_THREADS; i++){
         pthread_join(threads[i], &status);
     }
 
-    printf("The total of all elements in the array is: %d\n", TOTAL);
-
+    //printf("The total of all elements in the array is: %d\n", total);
+    //printf("The total of all elements in the array using a semaphore is: %d\n", semaphoreTotal);
+    printf("The total of all elements in the array using a mutex is: %d\n", mutexTotal);
    
     pthread_exit(NULL);
     return 0;
