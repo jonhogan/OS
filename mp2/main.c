@@ -28,8 +28,8 @@ int semaphoreTotal = 0;
 int mutexTotal = 0;
 
 int theArray[SIZE];
-
-void wait(S){
+ 
+void myWait(S){
     while (S < 1){};
     S--;
 }
@@ -44,18 +44,12 @@ void sem_sum(void *thread_id){
     long start = ((tid - 1) * 2000);
     long end = start + 2000;
 
-   
-
-    for (int i = start; i < end; i++){
-        sum += theArray[i];
+    for(int i = start; i <end; i++){
+        myWait(myMutex);
+        semaphoreTotal += theArray[i];
+        post(myMutex);
     }
-
-    wait(myMutex);
-  
-    semaphoreTotal += sum;
-    printf("Thread %ld: Sum is %ld using a semaphore\n", tid, sum);
-
-    post(myMutex);
+    
 }
 
 void mutex_sum(void *thread_id){
@@ -67,15 +61,12 @@ void mutex_sum(void *thread_id){
    
 
     for (int i = start; i < end; i++){
-        sum += theArray[i];
+        pthread_mutex_lock(&mx);
+        mutexTotal += theArray[i];
+        pthread_mutex_unlock(&mx);
+
     }
 
-    pthread_mutex_lock(&mx);
-  
-    mutexTotal += sum;
-    printf("Thread %ld: Sum is %ld using a mutex\n", tid, sum);
-
-    pthread_mutex_unlock(&mx);
 }
 
 void no_sem_sum(void *thread_id){
@@ -85,11 +76,8 @@ void no_sem_sum(void *thread_id){
     long end = start + 2000;
 
     for (int i = start; i < end; i++){
-        sum += theArray[i];
+        total += theArray[i];
     }
-    total += sum;
-
-    printf("Thread %ld: Sum is %ld without using a semaphore\n", tid, sum);
 
 }
 
@@ -100,7 +88,7 @@ int main()
     long t;
     void *status;
     pthread_attr_t attr;
-    //pthread_mutex_init(&mx,NULL);
+    pthread_mutex_init(&mx,NULL);
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
     
@@ -127,6 +115,7 @@ int main()
         pthread_join(threads[i], &status);
     }
 
+    printf("\n\n-----------------------------------------------------------\n");
     //printf("The total of all elements in the array is: %d\n", total);
     //printf("The total of all elements in the array using a semaphore is: %d\n", semaphoreTotal);
     printf("The total of all elements in the array using a mutex is: %d\n", mutexTotal);
